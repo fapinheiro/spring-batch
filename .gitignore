@@ -1,7 +1,7 @@
 /target/
 /bin/
 
-### Eclipse ###
+## Eclipse ##
 /.settings/
 .classpath
 .project
@@ -17,13 +17,13 @@
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
+## IntelliJ IDEA ##
 .idea
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+## NetBeans ##
 /nbproject/private/
 /build/
 /nbbuild/
