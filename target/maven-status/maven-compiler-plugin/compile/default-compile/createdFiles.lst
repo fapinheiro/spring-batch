@@ -1,5 +1,0 @@
-br\com\batch\entity\Transaction.class
-br\com\batch\processor\TransactionProcessor.class
-br\com\batch\listener\JobTransactionListener.class
-br\com\batch\configuration\JobTransactionConfiguration.class
-br\com\batch\application\Application.class
