@@ -1,0 +1,17 @@
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\mapper\StatisticRowMapper.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\processor\TransactionProcessor.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\configuration\JobTransactionConfiguration.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\listener\JobTransactionListener.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\listener\StepListener.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\entity\Transaction.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\application\Application.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\listener\StatisticWriterListener.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\reader\StatisticReader.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\listener\TransactionWriterListener.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\reader\TransactionReader.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\writer\StatisticWriter.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\listener\StatisticReaderListener.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\writer\TransactionWriter.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\entity\Statistic.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\listener\TransactionReaderListener.java
+C:\Users\filipe.pinheiro\Workspace\cloud\spring-batch\src\main\java\br\com\batch\property\JobProperty.java
