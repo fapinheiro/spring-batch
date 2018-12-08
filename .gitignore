@@ -1,10 +1,12 @@
 /target/
-!.mvn/wrapper/maven-wrapper.jar
+/bin/
 
 ### Eclipse ###
 /.settings/
 .classpath
 .project
+
+!.mvn/wrapper/maven-wrapper.jar
 
 ### STS ###
 .apt_generated
