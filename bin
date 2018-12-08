@@ -1,7 +1,0 @@
-tree 770275369a43f1331ee1f321c712d9e2d4a580d1
-parent d3a0c05465460025f1f6c04f4a92ee4bf8d73704
-parent f056efa0f29ce12c4b16c91a6b33ab195231648a
-author filipe.pinheiro <filipe.pinheiro@embracon.local> 1544303814 -0200
-committer filipe.pinheiro <filipe.pinheiro@embracon.local> 1544303814 -0200
-
-Merge branch 'master' of https://github.com/fapinheiro/spring-batch
