@@ -1,3 +1,8 @@
+# Example
+
+- Read and write flat files
+- Read and write from/to databases
+
 # Spring Batch References
 https://spring.io/guides/gs/batch-processing/
 https://www.baeldung.com/introduction-to-spring-batch
