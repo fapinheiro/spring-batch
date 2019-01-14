@@ -2,7 +2,7 @@
 -- create sequence if not exists seq_transaction start with 1 increment by 1 maxvalue 99999999;
 
 -- create table transaction
-create table if not exists transaction ( 
+create table if not exists transactions ( 
    id int auto_increment primary key,
    username varchar(10) not null,
    userid varchar(10) not null,
@@ -13,7 +13,7 @@ create table if not exists transaction (
 );
 
 -- create table statistic
-create table if not exists statistic ( 
+create table if not exists statisticss ( 
    id int auto_increment primary key,
    username varchar(10) not null,
    sumvalue varchar(20) not null

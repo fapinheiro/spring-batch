@@ -4,12 +4,12 @@ import org.springframework.batch.item.ItemProcessor;
 
 import br.com.batch.entity.Transaction;
 
-/*
- * Recebe uma transacao e calcula a taxa do iof 
+/**
+ * Proccess and sets transaction's taxes
+ * 
+ * @author filipe.pinheiro - 14/01/2019
  */
-public class TransactionProcessor implements ItemProcessor<Transaction, Transaction> {
-
-	//private static final Logger LOG = LoggerFactory.getLogger(TransactionProcessor.class);
+public class FileProcessor implements ItemProcessor<Transaction, Transaction> {
 	
 	@Override
 	public Transaction process(Transaction t) throws Exception {

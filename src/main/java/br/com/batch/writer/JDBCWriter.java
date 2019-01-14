@@ -7,17 +7,22 @@ import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilde
 
 import br.com.batch.entity.Statistic;
 
-public class StatisticWriter {
-	
+/**
+ * JDBC writer for writting to the database
+ * 
+ * @author filipe.pinheiro 03/01/2019
+ */
+public class JDBCWriter {
+    
+    final String sql =
+    			"insert into statisticss (username, sumvalue) VALUES (?,?)";
+                
 	public JdbcBatchItemWriter<Statistic> getJDBCWriter(DataSource dataSource) {
-    	final String sql =
-    			"INSERT INTO statistic (username, sumvalue) "
-    			+ "VALUES (?,?)";
         return new JdbcBatchItemWriterBuilder<Statistic>()
             .itemPreparedStatementSetter(  // Using lamba to map fields
-            		(statistic, preparedStatement) -> {
-            			preparedStatement.setString(1, statistic.getUsername());
-            			preparedStatement.setDouble(2, statistic.getSumValue());
+            		(st, pstmt) -> {
+            			pstmt.setString(1, st.getUsername());
+            			pstmt.setDouble(2, st.getSumValue());
              })
             .sql(sql)
             .dataSource(dataSource)

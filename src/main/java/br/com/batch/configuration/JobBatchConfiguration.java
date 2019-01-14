@@ -5,6 +5,7 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.ItemProcessListener;
 import org.springframework.batch.core.ItemReadListener;
 import org.springframework.batch.core.ItemWriteListener;
 import org.springframework.batch.core.Job;
@@ -16,33 +17,34 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute;
 
 import br.com.batch.entity.Statistic;
 import br.com.batch.entity.Transaction;
+import br.com.batch.listener.FileListener;
+import br.com.batch.listener.JDBCListener;
 import br.com.batch.listener.JobTransactionListener;
-import br.com.batch.listener.StatisticReaderListener;
-import br.com.batch.listener.StatisticWriterListener;
 import br.com.batch.listener.StepListener;
-import br.com.batch.listener.TransactionReaderListener;
-import br.com.batch.listener.TransactionWriterListener;
-import br.com.batch.processor.TransactionProcessor;
-import br.com.batch.property.JobProperty;
-import br.com.batch.reader.StatisticReader;
-import br.com.batch.reader.TransactionReader;
-import br.com.batch.writer.StatisticWriter;
-import br.com.batch.writer.TransactionWriter;
+import br.com.batch.processor.FileProcessor;
+import br.com.batch.reader.FileReader;
+import br.com.batch.reader.JDBCReader;
+import br.com.batch.writer.FileWriter;
+import br.com.batch.writer.JDBCWriter;
 
 @Configuration
 @EnableBatchProcessing
-public class JobTransactionConfiguration {
+public class JobBatchConfiguration {
 
-	private static final Logger LOG = LoggerFactory.getLogger(JobTransactionConfiguration.class);
+	private static final Logger LOG = LoggerFactory.getLogger(JobBatchConfiguration.class);
 	
 	@Autowired
     public JobBuilderFactory jobBuilderFactory;
@@ -51,29 +53,31 @@ public class JobTransactionConfiguration {
     public StepBuilderFactory stepBuilderFactory;
 
     @Autowired
-    public JobProperty jobProperty;
+    public JobConfig jobConfig;
     
     @Autowired
-    public DataSource dataSource;
+    @Qualifier("sqLiteDB")
+    public DataSource h2DB;
     
+    // @Autowired
+    // @Qualifier("mysqlDB")
+    // public DataSource mysqlDB;
+
+    private Resource outputResource = new FileSystemResource("output/transactions-output.csv");
+
     public DefaultTransactionAttribute attribute;
 
     @PostConstruct
     public void init() {
     	
     	// Show properties
-    	String info = String.format("Iniciando JOB com %d threads", jobProperty.getThreads());
-    	LOG.info(info);
-    	info = String.format("Iniciando JOB com %d skipLimit", jobProperty.getSkipLimit());
-    	LOG.info(info);
-    	info = String.format("Iniciando JOB com %d timeout", jobProperty.getTimeout());
-    	LOG.info(info);	
+		LOG.debug("jobConfig {}", jobConfig);
     	
     	// Use it only and not using an @Service and @Repository with @Transactional
     	attribute = new DefaultTransactionAttribute();
         attribute.setPropagationBehavior(Propagation.REQUIRED.value());
         attribute.setIsolationLevel(Isolation.SERIALIZABLE.value());
-        attribute.setTimeout(jobProperty.getTimeout());
+        attribute.setTimeout(jobConfig.getThreads().get("timeout"));
     }
     
     @Bean
@@ -81,25 +85,26 @@ public class JobTransactionConfiguration {
     	return jobBuilderFactory.get("JobTransaction")
     			.incrementer(new RunIdIncrementer())
     			.listener(jobListener) // Defines job listener
-    			.start(stepTransaction()) // To run only 1 .flow(step1).end() // To run more than one .start(step1).next(step2).next(stepN) 
+    			.start(stepFile()) // To run only 1 .flow(step1).end() // To run more than one .start(step1).next(step2).next(stepN) 
     			.on("FAILED").end() // .end() Ends the job execution on .flow()
-    			.from(stepTransaction()).on("COMPLETED").to(stepStatistic()).end() // Only execute second step if the first executed correctly without skips
+    			.from(stepFile()).on("COMPLETED").to(stepDataBase()).end() // Only execute second step if the first executed correctly without skips
     			.build();
     }
     
     @Bean
-    public Step stepTransaction() {
-    	return stepBuilderFactory.get("StepTransaction")
-    			.<Transaction, Transaction> chunk(jobProperty.getThreads()) // How much data to write at a time. Paralellal process. 
-    			.reader(transactionReader())
-    			.processor(transactionProcessor()) // Optinal With Processor we can transform chunk in/out
-    			.writer(transactionWriter())
+    public Step stepFile() {
+    	return stepBuilderFactory.get("StepFile")
+    			.<Transaction, Transaction> chunk(jobConfig.getThreads().get("count")) // How much data to write at a time. Paralellal process. 
+    			.reader(fileReader())
+    			.processor(fileProcessor()) // Optinal With Processor we can transform chunk in/out
+    			.writer(fileWriter())
     			.listener(stepListener()) // Optional
-    			.listener(transactionReaderListener()) // Optional
-    			.listener(transactionWriterListener()) // Optinal
+                .listener((ItemReadListener<Transaction>)fileListener()) // Optional
+                .listener((ItemProcessListener<Transaction, Transaction>)fileListener())
+    			.listener((ItemWriteListener<Transaction>)fileListener()) // Optinal
     			.faultTolerant()
     			//.noRollback(Exception.class) // Optional, exceptions that does not causes rollback
-    			.skipLimit(jobProperty.getSkipLimit())
+    			.skipLimit(jobConfig.getThreads().get("skip-limit"))
     			.skip(Exception.class) // Exceptions that causes skipping. Including subclasses.
     			//.noSkip(type) // Exception stop skipping
     			.transactionAttribute(attribute) // Define Transaction scope
@@ -107,72 +112,70 @@ public class JobTransactionConfiguration {
     }
     
     @Bean
-    public Step stepStatistic() {
-    	return stepBuilderFactory.get("StepStatistic")
-    			.<Statistic, Statistic> chunk(jobProperty.getThreads()) // How much data to write at a time 
-    			.reader(statisticJDBCReader())
+    public Step stepDataBase() {
+    	return stepBuilderFactory.get("StepDataBase")
+    			.<Statistic, Statistic> chunk(jobConfig.getThreads().get("count")) // How much data to write at a time 
+    			.reader(databaseJDBCReader())
     			//.processor(transactionProcessor()) // Optinal, With Processor we can transform chunk in/out
     			.writer(statisticJDBCWriter())
     			.listener(stepListener()) // Optional
-    			.listener(statisticReaderListener()) // Optional
-    			.listener(statisticWriterListener()) // Optional
+    			.listener((ItemReadListener<Statistic>)jdbcListener()) // Optional
+    			.listener((ItemWriteListener<Statistic>)jdbcListener()) // Optional
     			.faultTolerant()
     			//.noRollback(Exception.class) // Optional, exceptions that does not causes rollback
-    			.skipLimit(jobProperty.getSkipLimit())
+    			.skipLimit(jobConfig.getThreads().get("skip-limit"))
     			.skip(Exception.class) // Exceptions that causes skipping. Including subclasses.
     			//.noSkip(Exception.class) // Exception without skipping
     			.transactionAttribute(attribute) // Define Transaction scope
-    			
     			.build();
     }
     
+    // READERS
     @Bean
-    public StepListener stepListener() {
-    	return new StepListener(jobProperty.getSkipLimit());
-    }
-    
-    @Bean
-    public FlatFileItemReader<Transaction> transactionReader() {
-    	return new TransactionReader().getReader();
+    public FlatFileItemReader<Transaction> fileReader() {
+    	return new FileReader().getReader();
     }
 
     @Bean
-    public TransactionProcessor transactionProcessor() {
-        return new TransactionProcessor();
+    public JdbcCursorItemReader<Statistic> databaseJDBCReader() {
+            return new JDBCReader().getJDBCReader(
+                h2DB,
+                jobConfig.getLimits().get("validade"),
+    			jobConfig.getLimits().get("max-result"), 
+    			jobConfig.getThreads().get("timeout"));
     }
 
+    // PROCESSORS
     @Bean
-    public JdbcBatchItemWriter<Transaction> transactionWriter() {
-    	return new TransactionWriter().getWriter(dataSource);
+    public FileProcessor fileProcessor() {
+        return new FileProcessor();
     }
 
+    // WRITERS
     @Bean
-    public JdbcCursorItemReader<Statistic> statisticJDBCReader() {
-            return new StatisticReader().getJDBCReader(dataSource);
+    public FlatFileItemWriter<Transaction> fileWriter() {
+    	return new FileWriter().getWriter(outputResource);
     }
-    
+
     @Bean
     public JdbcBatchItemWriter<Statistic> statisticJDBCWriter() {
-    	return new StatisticWriter().getJDBCWriter(dataSource);
+    	return new JDBCWriter().getJDBCWriter(h2DB);
+    }
+
+    // LISTENERS
+    @Bean
+    public StepListener stepListener() {
+    	return new StepListener(jobConfig.getThreads().get("skip-limit"));
     }
     
     @Bean
-    public ItemReadListener<Transaction> transactionReaderListener() {
-    	return new TransactionReaderListener();
-    }
+    public FileListener fileListener() {
+    	return new FileListener();
+    }   
     
     @Bean
-    public ItemWriteListener<Transaction> transactionWriterListener() {
-    	return new TransactionWriterListener();
-    }
+    public JDBCListener jdbcListener() {
+    	return new JDBCListener();
+    }  
     
-    @Bean
-    public ItemReadListener<Statistic> statisticReaderListener() {
-    	return new StatisticReaderListener();
-    }
-    
-    @Bean
-    public ItemWriteListener<Statistic> statisticWriterListener() {
-    	return new StatisticWriterListener();
-    }
 }
