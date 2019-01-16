@@ -1,6 +1,5 @@
 package br.com.batch.writer;
 
-import javax.sql.DataSource;
 
 import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
 import org.springframework.batch.item.file.transform.DelimitedLineAggregator;

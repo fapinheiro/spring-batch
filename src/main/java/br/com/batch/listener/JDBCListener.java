@@ -2,16 +2,13 @@ package br.com.batch.listener;
 
 import java.util.List;
 
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.ItemProcessListener;
 import org.springframework.batch.core.ItemReadListener;
 import org.springframework.batch.core.ItemWriteListener;
 
 import br.com.batch.entity.Statistic;
-import br.com.batch.entity.Transaction;
 
 
 /**
