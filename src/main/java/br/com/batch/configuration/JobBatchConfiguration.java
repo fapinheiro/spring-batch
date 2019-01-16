@@ -37,6 +37,7 @@ import br.com.batch.listener.StepListener;
 import br.com.batch.processor.FileProcessor;
 import br.com.batch.reader.FileReader;
 import br.com.batch.reader.JDBCReader;
+import br.com.batch.tasklet.TaskletExample;
 import br.com.batch.writer.FileWriter;
 import br.com.batch.writer.JDBCWriter;
 
@@ -84,13 +85,32 @@ public class JobBatchConfiguration {
     public Job importTransactionJob(JobTransactionListener jobListener) {
     	return jobBuilderFactory.get("JobTransaction")
     			.incrementer(new RunIdIncrementer())
-    			.listener(jobListener) // Defines job listener
-    			.start(stepFile()) // To run only 1 .flow(step1).end() // To run more than one .start(step1).next(step2).next(stepN) 
+                .listener(jobListener) // Defines job listener
+                .start(stepTasklet())// To run only 1 .flow(step1).end() // To run more than one .start(step1).next(step2).next(stepN) 
     			.on("FAILED").end() // .end() Ends the job execution on .flow()
-    			.from(stepFile()).on("COMPLETED").to(stepDataBase()).end() // Only execute second step if the first executed correctly without skips
+                .next(stepFile())
+                .from(stepFile()).on("COMPLETED").to(stepDataBase()).end() // Only execute second step if the first executed correctly without skips
     			.build();
     }
     
+    // STEPS
+
+    /**
+     * Used to process a single task. Do not use for writing to file or inserting to database, use Steps for that purpouse
+     * @return
+     */
+	@Bean 
+	public Step stepTasklet() {
+		return stepBuilderFactory.get("stepTasklet")
+			.tasklet(new TaskletExample("teste"))
+			.build();
+    }
+    
+    // STEPS
+    /**
+     * Reads a flat file and write to another flat file
+     * @return
+     */
     @Bean
     public Step stepFile() {
     	return stepBuilderFactory.get("StepFile")
@@ -111,6 +131,10 @@ public class JobBatchConfiguration {
     			.build();
     }
     
+    /**
+     * Reads a database e writes to database
+     * @return
+     */
     @Bean
     public Step stepDataBase() {
     	return stepBuilderFactory.get("StepDataBase")
