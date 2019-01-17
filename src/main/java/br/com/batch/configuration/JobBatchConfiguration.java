@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute;
@@ -56,6 +57,9 @@ public class JobBatchConfiguration {
     @Autowired
     public JobConfig jobConfig;
     
+    @Autowired
+    public JdbcTemplate jdbcTemplate;
+
     @Autowired
     @Qualifier("sqLiteDB")
     public DataSource h2DB;
@@ -102,10 +106,12 @@ public class JobBatchConfiguration {
 	@Bean 
 	public Step stepTasklet() {
 		return stepBuilderFactory.get("stepTasklet")
-			.tasklet(new TaskletExample("teste"))
+			.tasklet(new TaskletExample("teste", jdbcTemplate))
 			.build();
     }
     
+   
+
     // STEPS
     /**
      * Reads a flat file and write to another flat file
