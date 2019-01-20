@@ -1,21 +1,29 @@
-FROM openjdk:11.0.1-jdk-slim-stretch   
+FROM openjdk:8u191-jre-alpine3.8
 
-MAINTAINER Filipe Pinheiro "filipe.alves.pinheiro@gmail.com"
+LABEL maintainerEmail="filipe.alves.pinheiro@gmail.com"
+
+LABEL maintainerName="Filipe Pinheiro"
 
 ENV PROJECT_NAME spring-batch
 
 ENV JAR_FILE_NAME spring-batch-0.1.0.jar
 
-WORKDIR /etc/apt
+ENV ENVIRONMENT dev
 
-RUN echo "deb-src http://deb.debian.org/debian stretch main" >> sources.list
-
-RUN apt update && apt-get install -y cron && apt-get install -y vim
-
+# Moving jar file
 WORKDIR /opt
 
 RUN mkdir $PROJECT_NAME
 
-COPY ./target/$JAR_FILE_NAME .
+COPY ./target/$JAR_FILE_NAME ./$PROJECT_NAME
 
-CMD /usr/bin/java -Dspring.profiles.active=dev -jar $JAR_FILE_NAME
+# Configuring CRONTAB
+WORKDIR /opt/$PROJECT_NAME
+
+RUN /usr/bin/crontab -l > mycron
+
+RUN echo "*/1 * * * * /usr/bin/java -Dspring.profiles.active="$ENVIRONMENT " -jar /opt/"$PROJECT_NAME/$JAR_FILE_NAME >> mycron
+
+RUN /usr/bin/crontab mycron && rm mycron
+
+CMD ["/usr/sbin/crond", "-f", "-l", "8"]

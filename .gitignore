@@ -1,12 +1,14 @@
 /target/
 /bin/
 bin
+memory
 
 ## VS Code ##
 /.vscode/
 
 ## Eclipse ##
 /.settings/
+.settings
 .classpath
 .project
 
